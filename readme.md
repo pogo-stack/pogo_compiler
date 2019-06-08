@@ -23,7 +23,7 @@ cd () {
             export PSQL_HOST=localhost
             export PSQL_DB=db_pogo3
             export PSQL_USER=pogo3_user
-            export PSQL_PASS=pogo3_password
+            export PSQL_PASS=pogo3_password_to_database
             export PSQL_SCHEMA=pogo3
             export POGO_FLAG_ENV='-e d'
             export POGO_FLAG_DEBUG='-debug'
@@ -35,4 +35,10 @@ cd () {
     fi
 }
 
+```
+
+### `.pgpass`
+
+```
+localhost:5432:db_pogo3:pogo3_user:pogo3_password_to_database
 ```
