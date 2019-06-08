@@ -5,7 +5,7 @@ go get github.com/pogo-stack/pogo_compiler
 ```
 
 
-## `.bash_aliases` sample to manage go environment and DB connection strings
+### `.bash_aliases` sample
 
 We use environmental variables to tell compiler what database to use or what to do.
 
