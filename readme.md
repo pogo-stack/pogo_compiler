@@ -37,7 +37,7 @@ cd () {
 
 ```
 
-### `.pgpass`
+### `.pgpass` sample
 
 ```
 localhost:5432:db_pogo3:pogo3_user:pogo3_password_to_database
