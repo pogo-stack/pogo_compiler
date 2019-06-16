@@ -339,7 +339,7 @@ func main() {
 				}
 			}
 
-			line_input = strings.Replace(line_input, "<%= psp2_", "<= (select encode(response_content, 'escape') from psp2_", -1)
+			line_input = strings.Replace(line_input, "<%= psp2_", "<= (select response_content from psp2_", -1)
 
 			// if strings.HasPrefix(line_input, "#log") {
 			// 	if *environment == "d" {
