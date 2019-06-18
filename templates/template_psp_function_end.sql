@@ -91,7 +91,7 @@ do $$
 begin
 	insert into __pogo__compiled_source (name, latest_version)
 	values ('$name$', 1);
-	update __pogo__compiled_source set is_auth = $is_noauth$ where name = '$name$';
+	update __pogo__compiled_source set is_noauth = $is_noauth$ where name = '$name$';
 exception when others then
 	update __pogo__compiled_source
 	set latest_version = latest_version + 1
