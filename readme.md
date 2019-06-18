@@ -35,6 +35,8 @@ cd () {
     fi
 }
 
+cd .
+
 ```
 
 ### `.pgpass` sample
