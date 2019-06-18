@@ -26,6 +26,7 @@ import (
 
 var function_name, function_prefix, function_parameters, function_returns, function_form, template_suffix, sql_debug, volatility_category string
 var testcases, dependencies, native_parameters []string
+var is_noauth bool
 var BUILD_VERSION = ""
 var is_debuggable bool
 var is_trace_enabled bool
@@ -88,6 +89,13 @@ func importFile(file_name string) string {
 	for scanner.Scan() {
 		line = strings.Replace(scanner.Text(), `$name$`, function_name, -1)
 		line = strings.Replace(line, `$function$`, function_prefix+function_name, -1)
+
+		is_noauth_sql_bool := "false"
+		if is_noauth {
+			is_noauth_sql_bool = "true"
+		}
+
+		line = strings.Replace(line, `$is_noauth$`, is_noauth_sql_bool, -1)
 
 		parameters_len := len(function_parameters)
 		if parameters_len > 0 && function_parameters[parameters_len-1] == ',' {
@@ -251,6 +259,11 @@ func main() {
 
 		if is_first_line {
 
+			if line_input == "#pragma noauth" {
+				is_noauth = true
+				continue
+			}
+
 			if strings.HasPrefix(line_input, "#testcase ") {
 				splices := strings.SplitN(line_input+" ", " ", 2)
 				testcase := strings.Trim(splices[1], " ")
@@ -295,11 +308,11 @@ func main() {
 				continue
 			}
 
-			if line_input == "#pragma view" {
-				is_view = true
-				function_prefix = ""
-				template_suffix = "_view"
-			}
+			//if line_input == "#pragma view" {
+			//	is_view = true
+			//	function_prefix = ""
+			//	template_suffix = "_view"
+			//}
 
 			if strings.HasPrefix(line_input, "#returns ") {
 				splices := strings.SplitN(line_input, " ", 2)

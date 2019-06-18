@@ -89,8 +89,8 @@ select distinct '$name$', unnest(regexp_split_to_array($dependencies$, ','));
 
 do $$
 begin
-	insert into __pogo__compiled_source (name, latest_version)
-	values ('$name$', 1);
+	insert into __pogo__compiled_source (name, latest_version, is_noauth)
+	values ('$name$', 1, $is_noauth$);
 exception when others then
 	update __pogo__compiled_source
 	set latest_version = latest_version + 1
