@@ -193,6 +193,7 @@ func main() {
 	is_jsonb := false
 	is_view := false
 	is_pragma_timing := false
+	in_new_declare_statement := false
 
 	line_input := ""
 	var b bytes.Buffer
@@ -366,6 +367,7 @@ func main() {
 				in_header = false /* as soon as we reach the declare section, the header section stops */
 				in_params = false
 				in_declare = true
+				in_new_declare_statement = true /* that is used to parse variable names in declaration */
 				line_input = line_input[2:]
 
 				if (is_native || is_raw || is_view) && !is_jsonb {
@@ -460,12 +462,23 @@ func main() {
 			}
 
 			if in_declare {
-				splice := strings.SplitN(line_input, " ", 3)
-				if splice[0] != "" {
-					debug_variables = append(debug_variables, splice[0])
+				constantParameterName := regexp.MustCompile(`^[A-Z_]{1,}`).FindString(line_input)
+
+				if constantParameterName != "" {
+					debug_variables = append(debug_variables, constantParameterName)
+					in_new_declare_statement = false
+				} else {
+					declare_splice := strings.SplitN(strings.TrimRight(line_input, ";"), " ", 3)
+					splice := declare_splice[0]
+					if in_new_declare_statement && splice != "" && len(declare_splice) >= 2 && declare_splice[1] != "record" {
+						debug_variables = append(debug_variables, splice)
+						in_new_declare_statement = false
+					}
+				}
+				if strings.HasSuffix(strings.TrimSpace(line_input), ";") {
+					in_new_declare_statement = true
 				}
 
-				constantParameterName := regexp.MustCompile(`^[A-Z_]{1,}`).FindString(line_input)
 				if constantParameterName != "" && strings.Index(line_input, `:=`) == -1 {
 					constantParameterType := strings.Trim(regexp.MustCompile(` [A-Za-z]{1,}`).FindString(line_input), " ")
 					b.WriteString(fmt.Sprintf("%s constant %s := get_system_value_%s('%s', null);\n", constantParameterName, constantParameterType, constantParameterType, strings.ToLower(constantParameterName)))
