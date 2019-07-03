@@ -2,6 +2,7 @@
  * PoGoStack Compiler www.pogostack.com
  *
  * Author: "Alex Nedoboi" alex@pogostack.com
+ * Contributo: "Evgeny Komarevtsev" evgeny@komarevtsev.net
  *
  * Input: .pogo file format, see pogostack.org for specifications and examples
  *
@@ -309,12 +310,6 @@ func main() {
 				continue
 			}
 
-			//if line_input == "#pragma view" {
-			//	is_view = true
-			//	function_prefix = ""
-			//	template_suffix = "_view"
-			//}
-
 			if strings.HasPrefix(line_input, "#returns ") {
 				splices := strings.SplitN(line_input, " ", 2)
 				function_returns = splices[1]
@@ -353,14 +348,8 @@ func main() {
 				}
 			}
 
-			line_input = strings.Replace(line_input, "<%= psp2_", "<= (select response_content from psp2_", -1)
-
-			// if strings.HasPrefix(line_input, "#log") {
-			// 	if *environment == "d" {
-			// 		b.WriteString("console.log(" + line_input[5:] + ");\n")
-			// 	}
-			// 	line_input = ""
-			// }
+			line_input = strings.Replace(line_input, "<%= psp2_", "<= (select response_content#>>'{text/html,response,content}' from psp2_", -1)
+			line_input = strings.Replace(line_input, "pogo_json(", "_jsonr_ := jsonb_set(_jsonr_, '{application/json,response,content}', ", -1)
 
 			/* variables declaration tags <? ?> */
 			if strings.HasPrefix(line_input, "<?") {

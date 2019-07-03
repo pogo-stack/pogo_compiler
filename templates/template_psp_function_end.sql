@@ -15,12 +15,14 @@ end loop;
 
 _t_ := array_to_string(_v_, '');
 
-select _h_, _t_
-	/*|| '<!-- ' || (clock_timestamp() - _c_) :: interval
-	|| ' / ' || _n_
-	|| ' / ' || trim(to_char(length(_t_), '999,999,999,999')) || ' -->'*/
-into _r_;
-return _r_;
+return (row(
+			_r_ || jsonb_build_object(
+					'http_code', 200, 
+					'text/html', jsonb_build_object('response', jsonb_build_object('type', 'text', 'content',  _t_))
+				) ||
+				_jsonr_
+			)
+		);
 
 exception when others then
 	get stacked diagnostics v_error_stack = pg_exception_context;
@@ -32,7 +34,8 @@ exception when others then
 		exit when _h_ > 2;
 		begin
 			insert into __pogo__errors
-			(
+		
+	(
 				id,
 				time_stamp,
 				user_id,
@@ -61,16 +64,28 @@ exception when others then
 		end;
 	end loop;
 
-	-- NOTE: Can't change it to JSON here since it will break the non AJAX usecase
-	select 500, '<pre class="pre-yellow-error" style="background-color:yellow; color:pink;">*** error has occurred '
---		|| ' in `$function$` line ' || _l_
---		|| ' state ' || sqlerrm
-		|| (case when 1 in (1) then '*** <a target="_blank" href="error?p_id=' || _errid_ || '">details</a>' else '' end)
-		|| ' ***</pre>'
+	return (row(_r_ || jsonb_build_object(
+			'http_code', 500,
+			'text/html', jsonb_build_object(
+				'response', jsonb_build_object(
+					'type', 'text', 
+					'content',  '<pre class="pre-yellow-error" style="background-color:yellow; color:pink;">*** error has occurred '
+						|| (case when 1 in (1) then '*** <a target="_blank" href="error?p_id=' || _errid_ || '">details</a>' else '' end)
+						|| ' ***</pre>'
+				)
+			),
+			'application/json', jsonb_build_object(
+				'response', jsonb_build_object(
+					'type', 'json', 
+					'content', jsonb_build_object(
+						'status', 'error',
+						'error_id', _errid_
+					) 
+				)
+			)
+		)));
 
-	into _r_;
 
-	return _r_;
 end;
 $$
 language plpgsql $volatility_category$;
@@ -100,17 +115,6 @@ $$;
 
 update __pogo__compiled_source set is_noauth = $is_noauth$ where name = '$name$';
 
-
-/*do $$
-declare
-	t text := chr(13);
-	r pogo__return__type;
-begin
-	r := psp_$name$('p_id=1', 1);
-	t := t || length(r.response_text)::text || chr(13) || chr(13);
-	raise info '%', t;
-end;
-$$;*/
 
 $debugger_breakpoints$
 
