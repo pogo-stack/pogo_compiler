@@ -117,5 +117,3 @@ update __pogo__compiled_source set is_noauth = $is_noauth$ where name = '$name$'
 
 
 $debugger_breakpoints$
-
-\q
