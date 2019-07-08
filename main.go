@@ -128,7 +128,7 @@ func importFile(file_name string) string {
 				values = append(values, fmt.Sprintf("('%v', %v)", function_name, breakpoint))
 			}
 
-			line = strings.Replace(line, "$debugger_breakpoints$", fmt.Sprintf("insert into __pogo__breakpoints (page, line) values %v", strings.Join(values, ",")), -1)
+			line = strings.Replace(line, "$debugger_breakpoints$", fmt.Sprintf("insert into __pogo__breakpoints (page, line) values %v;", strings.Join(values, ",")), -1)
 		} else {
 			line = strings.Replace(line, "$debugger_breakpoints$", "", -1)
 		}
