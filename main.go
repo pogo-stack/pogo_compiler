@@ -470,7 +470,7 @@ func main() {
 
 				if constantParameterName != "" && strings.Index(line_input, `:=`) == -1 {
 					constantParameterType := strings.Trim(regexp.MustCompile(` [A-Za-z]{1,}`).FindString(line_input), " ")
-					b.WriteString(fmt.Sprintf("%s constant %s := get_system_value_%s('%s', null);\n", constantParameterName, constantParameterType, constantParameterType, strings.ToLower(constantParameterName)))
+					b.WriteString(fmt.Sprintf("%s constant %s := get_system_value_%s('%s');\n", constantParameterName, constantParameterType, constantParameterType, strings.ToLower(constantParameterName)))
 					continue
 				}
 			}
