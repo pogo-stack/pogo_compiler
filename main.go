@@ -348,8 +348,12 @@ func main() {
 				}
 			}
 
-			line_input = strings.Replace(line_input, "<%= psp2_", "<= (select response_content#>>'{text/html,response,content}' from psp2_", -1)
-			line_input = strings.Replace(line_input, "pogo_json(", "_jsonr_ := jsonb_set(_jsonr_, '{application/json,response,content}', ", -1)
+			line_input = strings.Replace(line_input, "<%= psp2_", "<= (select text_content from psp2_", -1)
+			line_input = strings.Replace(line_input, "pogo_json(", "_jsonr_ := (", -1)
+			line_input = strings.Replace(line_input, "pogo_binary(", "_bytear_ := (", -1)
+			line_input = strings.Replace(line_input, "pogo_http_code(", "_addr_ := _addr_ || jsonb_build_object('http_code', ", -1)
+			line_input = strings.Replace(line_input, "pogo_header(", "_addr_ := jsonb_set(_addr_, '{headers}',", -1)
+			line_input = strings.Replace(line_input, "pogo_cookie(", "_addr_ := jsonb_set(_addr_, '{cookies}',", -1)
 
 			/* variables declaration tags <? ?> */
 			if strings.HasPrefix(line_input, "<?") {

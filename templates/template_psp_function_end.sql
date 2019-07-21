@@ -15,12 +15,10 @@ end loop;
 
 _t_ := array_to_string(_v_, '');
 
-return (row(
-			_r_ || jsonb_build_object(
-					'http_code', 200, 
-					'text/html', jsonb_build_object('response', jsonb_build_object('type', 'text', 'content',  _t_))
-				) ||
-				_jsonr_
+return (row(_t_::text,
+			_jsonr_::jsonb,
+			_bytear_::bytea,
+			_addr_::jsonb
 			)
 		);
 
@@ -64,26 +62,18 @@ exception when others then
 		end;
 	end loop;
 
-	return (row(_r_ || jsonb_build_object(
-			'http_code', 500,
-			'text/html', jsonb_build_object(
-				'response', jsonb_build_object(
-					'type', 'text', 
-					'content',  '<pre class="pre-yellow-error" style="background-color:yellow; color:pink;">*** error has occurred '
-						|| (case when 1 in (1) then '*** <a target="_blank" href="error?p_id=' || _errid_ || '">details</a>' else '' end)
-						|| ' ***</pre>'
+	return (row(
+					'<pre class="pre-yellow-error" style="background-color:yellow; color:pink;">*** error has occurred '
+								|| (case when 1 in (1) then '*** <a target="_blank" href="error?p_id=' || _errid_ || '">details</a>' else '' end)
+								|| ' ***</pre>'::text,
+					jsonb_build_object(
+								'status', 'error',
+								'error_id', _errid_
+							)::jsonb,
+					null::bytea,
+					jsonb_build_object('http_code', 500)
 				)
-			),
-			'application/json', jsonb_build_object(
-				'response', jsonb_build_object(
-					'type', 'json', 
-					'content', jsonb_build_object(
-						'status', 'error',
-						'error_id', _errid_
-					) 
-				)
-			)
-		)));
+			);
 
 
 end;
