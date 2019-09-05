@@ -208,6 +208,7 @@ func main() {
 		"/link":  true,
 		"/meta":  true,
 		"/path":  true,
+		"/base":  true,
 	}
 
 	sql_debug = "1"
