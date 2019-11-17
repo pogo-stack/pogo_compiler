@@ -222,6 +222,7 @@ func main() {
 		"/source": true,
 		"/track":  true,
 		"/wbr":    true,
+		"/path":    true,
 	}
 
 	sql_debug = "1"
