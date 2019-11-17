@@ -25,6 +25,7 @@ import (
 	"strings"
 )
 
+var compiler_version = "pogo1.0"
 var function_name, function_prefix, function_parameters, function_returns, function_form, template_suffix, sql_debug, volatility_category string
 var testcases, dependencies, native_parameters []string
 var is_noauth bool
@@ -144,6 +145,7 @@ func importFile(file_name string) string {
 func main() {
 
 	build := flag.String("b", "", "Makes $BUILD$ available in pogo files")
+	print_version := flag.Bool("v", false, "Displays compiler version and exits")
 	environment := flag.String("e", "p", "Environment [d|t|p]")
 	is_cleanup := flag.Bool("cleanup", false, "Clean up (remove previously compiled but do not compile new version)")
 	is_debuggable_flag := flag.Bool("debug", false, "Enables debug build (breakpoint support)")
@@ -152,6 +154,11 @@ func main() {
 
 	is_debuggable = *is_debuggable_flag
 	is_trace_enabled = *is_trace_flag
+
+	if *print_version {
+		fmt.Fprintf(os.Stdout, "pogo_compiler version %v\n", compiler_version)
+		os.Exit(0)
+	}
 
 	BUILD_VERSION = *build
 
