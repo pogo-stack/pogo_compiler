@@ -201,14 +201,20 @@ func main() {
 
 	tags := []string{}
 	tags_to_ignore := map[string]bool{
-		"/hr":    true,
-		"/br":    true,
-		"/input": true,
-		"/img":   true,
-		"/link":  true,
-		"/meta":  true,
-		"/path":  true,
-		"/base":  true,
+		"/area":   true,
+		"/base":   true,
+		"/br":     true,
+		"/col":    true,
+		"/embed":  true,
+		"/hr":     true,
+		"/img":    true,
+		"/input":  true,
+		"/link":   true,
+		"/meta":   true,
+		"/param":  true,
+		"/source": true,
+		"/track":  true,
+		"/wbr":    true,
 	}
 
 	sql_debug = "1"
