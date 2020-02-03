@@ -62,6 +62,8 @@ exception when others then
 		end;
 	end loop;
 
+	raise notice 'sql error: % - %', '$function$'::text, sqlerrm::text;
+
 	return (row(
 					'<pre class="pre-yellow-error" style="background-color:yellow; color:pink;">*** error has occurred '
 								|| (case when 1 in (1) then '*** <a target="_blank" href="error?p_id=' || _errid_ || '">details</a>' else '' end)

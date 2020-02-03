@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-var compiler_version = "pogo1.0"
+var compiler_version = "pogo1.1"
 var function_name, function_prefix, function_parameters, function_returns, function_form, template_suffix, sql_debug, volatility_category string
 var testcases, dependencies, native_parameters []string
 var is_noauth bool
