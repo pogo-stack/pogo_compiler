@@ -25,11 +25,12 @@ import (
 	"strings"
 )
 
-var compilerVersion = "pogo1.1"
+var compilerVersion = "pogo1.2"
 var BUILD_VERSION = ""
 var functionName, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
 var testcases, dependencies, nativeParameters []string
 var isNoauth bool
+var isPCheck bool = true
 var isDebuggable bool
 var isTraceEnabled bool
 var breakpointCount = 0
@@ -281,6 +282,11 @@ func main() {
 				continue
 			}
 
+			if lineInput == "#pragma nopcheck" {
+				isPCheck = false
+				continue
+			}
+
 			if strings.HasPrefix(lineInput, "#testcase ") {
 				splices := strings.SplitN(lineInput+" ", " ", 2)
 				testcase := strings.Trim(splices[1], " ")
@@ -427,7 +433,7 @@ func main() {
 
 				splice := strings.SplitN(lineInput, " ", 3)
 
-				if !strings.HasPrefix(splice[0], "p_") && !strings.HasPrefix(splice[0], "sp_") && !strings.HasPrefix(splice[0], "new_") && len(splice[0]) != 1 {
+				if isPCheck && !strings.HasPrefix(splice[0], "p_") && !strings.HasPrefix(splice[0], "sp_") && !strings.HasPrefix(splice[0], "new_") && len(splice[0]) != 1 {
 					fmt.Fprintf(os.Stderr, "\x1b[31;1mBad parameter name `%v` in `%v` \x1b[0m \n", splice[0], functionName)
 					os.Exit(1)
 				}
