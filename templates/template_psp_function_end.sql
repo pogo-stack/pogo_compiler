@@ -57,12 +57,11 @@ exception when others then
 				sqlerrm
 			)
 			returning id into _errid_;
+			raise notice 'sql error: % - % - %', '$function$'::text, sqlerrm::text, v_error_stack::text;
 			exit;
 			exception when others then null;
 		end;
 	end loop;
-
-	raise notice 'sql error: % - %', '$function$'::text, sqlerrm::text;
 
 	return (row(
 					'<pre class="pre-yellow-error" style="background-color:yellow; color:pink;">*** error has occurred '
