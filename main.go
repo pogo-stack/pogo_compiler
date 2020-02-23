@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-var compilerVersion = "pogo1.3"
+var compilerVersion = "pogo1.4"
 var BUILD_VERSION = ""
 var functionName, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
 var testcases, dependencies, nativeParameters []string
@@ -33,6 +33,7 @@ var isNoauth bool
 var isPCheck bool = true
 var isDebuggable bool
 var isTraceEnabled bool
+var isTraceParametersInDOM bool
 var breakpointCount = 0
 var debuggerBreakpoints []int
 var pogoFileName = ""
@@ -147,14 +148,15 @@ func main() {
 
 	build := flag.String("b", "", "Makes $BUILD$ available in pogo files")
 	isPrintVersion := flag.Bool("v", false, "Displays compiler version and exits")
-	environment := flag.String("e", "p", "Environment [d|t|p]")
 	isCleanup := flag.Bool("cleanup", false, "Clean up (remove previously compiled but do not compile new version)")
 	isDebuggableFlag := flag.Bool("debug", false, "Enables debug build (breakpoint support)")
 	isTraceFlag := flag.Bool("trace", false, "Enables tracing into __pogo_debugger_trace (works with debugging enabled only)")
+	pTraceFlag := flag.Bool("ptrace", false, "Enables output of function parameters in DOM rendering)")
 	flag.Parse()
 
 	isDebuggable = *isDebuggableFlag
 	isTraceEnabled = *isTraceFlag
+	isTraceParametersInDOM = *pTraceFlag
 
 	if *isPrintVersion {
 		fmt.Fprintf(os.Stdout, "pogo_compiler version %v\n", compilerVersion)
@@ -400,7 +402,7 @@ func main() {
 
 					traceParameters := ""
 
-					if *environment == "d" {
+					if isTraceParametersInDOM {
 						traceParameters = `' || replace(__FORM__, '&', ' ') || '`
 						if isNative || isRaw {
 							traceParameters = ``
