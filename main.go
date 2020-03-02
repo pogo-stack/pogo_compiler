@@ -25,7 +25,7 @@ import (
 	"strings"
 )
 
-var compilerVersion = "pogo1.4"
+var compilerVersion = "pogo1.5"
 var BUILD_VERSION = ""
 var functionName, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
 var testcases, dependencies, nativeParameters []string
