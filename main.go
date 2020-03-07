@@ -2,7 +2,10 @@
  * PoGoStack Compiler www.pogostack.com
  *
  * Author: "Alex Nedoboi" alex@pogostack.com
- * Contributo: "Evgeny Komarevtsev" evgeny@komarevtsev.net
+ *
+ * Contributors:
+ *
+ * "Evgeny Komarevtsev" evgeny@komarevtsev.net
  *
  * Input: .pogo file format, see pogostack.org for specifications and examples
  *
@@ -25,7 +28,7 @@ import (
 	"strings"
 )
 
-var compilerVersion = "pogo1.5"
+var compilerVersion = "pogo1.6"
 var BUILD_VERSION = ""
 var functionName, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
 var testcases, dependencies, nativeParameters []string
@@ -261,13 +264,15 @@ func main() {
 			os.Exit(1)
 		}
 
-		lineInput = strings.Replace(lineInput, "\t", " ", -1)
-		lineInput = strings.Trim(lineInput, " ")
-		lineInput = reSpaces.ReplaceAllString(lineInput, " ")
+		if !inQuotesBacktick {
+			lineInput = strings.Replace(lineInput, "\t", " ", -1)
+			lineInput = strings.Trim(lineInput, " ")
+			lineInput = reSpaces.ReplaceAllString(lineInput, " ")
+		}
 
 		lineInput = strings.Replace(lineInput, "$function_name$", functionName, -1)
 
-		if lineInput == "" {
+		if lineInput == "" && !inQuotesBacktick {
 			continue
 		}
 
