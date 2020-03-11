@@ -19,4 +19,4 @@ declare
 	v_error_stack text := '';
 	_jsonr_ jsonb := jsonb_build_object();
 	_bytear_ bytea := null::bytea;
-	_addr_ jsonb := jsonb_build_object('http_code', 200, 'headers', jsonb_build_array(), 'cookies', jsonb_build_array());
+	_addr_ jsonb := jsonb_build_object('http_code', 200, 'headers', jsonb_build_object(), 'cookies', jsonb_build_object());
