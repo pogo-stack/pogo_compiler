@@ -11,7 +11,8 @@
             "mode": "auto",
             "program": "${fileDirname}",
             "env": {},
-            "args": ["-debug", "test_pages/test.pogo"]
+            //"args": ["-debug", "-root", "/home/evgeny/projects/pogo_compiler/test_pages", "/home/evgeny/projects/pogo_compiler/test_pages/routed_calls.pogo"]
+            "args": ["-root", "/home/evgeny/projects/pogo_compiler/test_pages", "/home/evgeny/projects/pogo_compiler/test_pages/routed_calls.pogo"]
         }
     ]
 }

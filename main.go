@@ -40,6 +40,7 @@ var isTraceParametersInDOM bool
 var breakpointCount = 0
 var debuggerBreakpoints []int
 var pogoFileName = ""
+var rootCodePath = ""
 
 func writePogoBreakPoint(b *bytes.Buffer, debugVariables []string, lineNumber int) {
 
@@ -155,11 +156,13 @@ func main() {
 	isDebuggableFlag := flag.Bool("debug", false, "Enables debug build (breakpoint support)")
 	isTraceFlag := flag.Bool("trace", false, "Enables tracing into __pogo_debugger_trace (works with debugging enabled only)")
 	pTraceFlag := flag.Bool("ptrace", false, "Enables output of function parameters in DOM rendering)")
+	srcRootPathFlag := flag.String("root", "", "Root directory code file is compailed against")
 	flag.Parse()
 
 	isDebuggable = *isDebuggableFlag
 	isTraceEnabled = *isTraceFlag
 	isTraceParametersInDOM = *pTraceFlag
+	rootCodePath = *srcRootPathFlag
 
 	if *isPrintVersion {
 		fmt.Fprintf(os.Stdout, "pogo_compiler version %v\n", compilerVersion)
