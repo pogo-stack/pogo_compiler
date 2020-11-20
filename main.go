@@ -411,9 +411,15 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 					urlPath, _ :=  filepath.Split(newS[:e])
 					tokenToReplace := "<%= psp2/" + urlPath
 					urlPath = filepath.Clean(urlPath)
-					urlPath = strings.Replace(urlPath, "\\", "/", -1)
+					pathMD5 := ""
+					if (urlPath == ".") {
+						urlPath = ""
+					} else {
+						urlPath = strings.Replace(urlPath, "\\", "/", -1)
+						pathMD5 = fmt.Sprintf("%x_", md5.Sum([]byte(urlPath)))
+					}
 
-					replacementString := fmt.Sprintf("<= (select text_content from psp2_%x_", md5.Sum([]byte(urlPath)))
+					replacementString := fmt.Sprintf("<= (select text_content from psp2_%v", pathMD5)
 					lineInput = strings.Replace(preReplace, tokenToReplace, replacementString, -1)
 				}
 			}
