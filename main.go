@@ -20,6 +20,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/md5"
 	"flag"
 	"fmt"
 	"os"
@@ -30,7 +31,7 @@ import (
 
 var compilerVersion = "pogo1.7"
 var BUILD_VERSION = ""
-var functionName, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
+var functionName, friendlyFunctionName, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
 var testcases, dependencies, nativeParameters []string
 var isNoauth bool
 var isPCheck bool = true
@@ -41,6 +42,8 @@ var breakpointCount = 0
 var debuggerBreakpoints []int
 var pogoFileName = ""
 var rootCodePath = ""
+var relativeFolderHash = ""
+var relativeFolderName = ""
 
 func writePogoBreakPoint(b *bytes.Buffer, debugVariables []string, lineNumber int) {
 
@@ -96,6 +99,7 @@ func importFile(fileName string) string {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line = strings.Replace(scanner.Text(), `$name$`, functionName, -1)
+		line = strings.Replace(line, `$friendly_name$`, friendlyFunctionName, -1)
 		line = strings.Replace(line, `$function$`, functionPrefix+functionName, -1)
 
 		isNoauthSQLBool := "false"
@@ -156,7 +160,7 @@ func main() {
 	isDebuggableFlag := flag.Bool("debug", false, "Enables debug build (breakpoint support)")
 	isTraceFlag := flag.Bool("trace", false, "Enables tracing into __pogo_debugger_trace (works with debugging enabled only)")
 	pTraceFlag := flag.Bool("ptrace", false, "Enables output of function parameters in DOM rendering)")
-	srcRootPathFlag := flag.String("root", "", "Root directory code file is compailed against")
+	srcRootPathFlag := flag.String("root", "", "Root directory code file is compiled against")
 	flag.Parse()
 
 	isDebuggable = *isDebuggableFlag
@@ -177,15 +181,34 @@ func main() {
 	}
 
 	pogoFileName, _ = filepath.Abs(os.Args[len(os.Args)-1])
-	sourceFile, err := os.Open(pogoFileName)
 
+	p2, _ := filepath.Split(pogoFileName)
+	relPath, _ :=  filepath.Rel(filepath.Clean(strings.ToLower(rootCodePath)), filepath.Clean(strings.ToLower(p2)))
+	relPath = strings.Replace(relPath, "\\", "/", -1)
+	fmt.Print(relPath)
+	relativeFolderHash = fmt.Sprintf("%x_", md5.Sum([]byte(relPath)))
+	relativeFolderName = relPath + "/"
+
+	if (relPath == ".") {
+		relativeFolderHash = ""
+		relativeFolderName = ""
+	}
+
+	b := compileFile(pogoFileName, isCleanup)
+
+	fmt.Println(b.String())
+
+	os.Exit(0)
+
+}
+
+func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
+	sourceFile, err := os.Open(pogoFileName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot open input file %v \n\n", pogoFileName)
 		os.Exit(1)
 	}
-
 	defer sourceFile.Close()
-
 	inCode := false
 	inEquals := false
 	inDeclare := false
@@ -211,10 +234,8 @@ func main() {
 	isView := false
 	isPragmaTiming := false
 	inNewDeclareStatement := false
-
 	lineInput := ""
 	var b bytes.Buffer
-
 	tags := []string{}
 	tagsToIgnore := map[string]bool{
 		"/area":   true,
@@ -233,30 +254,22 @@ func main() {
 		"/wbr":    true,
 		"/path":   true,
 	}
-
 	sqlDebug = "1"
-
 	functionPrefix = "psp2_"
 	functionParameters = ""
 	functionReturns = "pogo__return__type"
 	volatilityCategory = "VOLATILE"
-
 	isNative = true
 	nativeParameters = []string{}
 	functionForm = "'{}'"
-
 	reSpaces := regexp.MustCompile("[ ]{2,}")
 	rePSPFull := regexp.MustCompile(" psp_[a-z_]{1,}")
 	rePSPName := regexp.MustCompile("^ psp_")
 	reTag := regexp.MustCompile("^[/]{0,1}[a-z]{1,}[0-9]{0,1}")
-
 	debugVariables := []string{}
 	//is_debuggable := true
-
 	scanner := bufio.NewScanner(sourceFile)
-
 	lineNumber := 0
-
 	for (!isIncluding && scanner.Scan()) || isIncluding {
 
 		lineNumber++
@@ -351,7 +364,8 @@ func main() {
 				continue
 			}
 
-			functionName = lineInput
+			functionName = relativeFolderHash + lineInput
+			friendlyFunctionName = relativeFolderName + lineInput
 
 			if !isView {
 				b.WriteString(importFile("templates/template_psp_function_drop.sql"))
@@ -379,7 +393,30 @@ func main() {
 				}
 			}
 
-			lineInput = strings.Replace(lineInput, "<%= psp2_", "<= (select text_content from psp2_", -1)
+			if (rootCodePath == "") {
+				lineInput = strings.Replace(lineInput, "<%= psp2_", "<= (select text_content from psp2_", -1)
+			} else {
+				preReplace := lineInput
+				lineInput = strings.Replace(lineInput, "<%= psp2/", "<= (select text_content from psp2_", -1)
+				if (preReplace != lineInput) { //need to call a psp2 including path
+					s := strings.Index(preReplace, "psp2/")
+					if s == -1 {
+						continue
+					}
+					newS := preReplace[s+len("psp2/"):]
+					e := strings.Index(newS, "(")
+					if e == -1 {
+						continue
+					}
+					urlPath, _ :=  filepath.Split(newS[:e])
+					tokenToReplace := "<%= psp2/" + urlPath
+					urlPath = filepath.Clean(urlPath)
+					urlPath = strings.Replace(urlPath, "\\", "/", -1)
+
+					replacementString := fmt.Sprintf("<= (select text_content from psp2_%x_", md5.Sum([]byte(urlPath)))
+					lineInput = strings.Replace(preReplace, tokenToReplace, replacementString, -1)
+				}
+			}
 			lineInput = strings.Replace(lineInput, "pogo_json(", "_jsonr_ := (", -1)
 			lineInput = strings.Replace(lineInput, "pogo_binary(", "_bytear_ := (", -1)
 			lineInput = strings.Replace(lineInput, "pogo_http_code(", "_addr_ := _addr_ || jsonb_build_object('http_code', ", -1)
@@ -424,7 +461,7 @@ func main() {
 						}
 					}
 
-					b.WriteString("if _d_ > 0 then _v_[_n_] := '<!-- start: " + functionName + " " + traceParameters + " -->'; _n_ := _n_ + 1; end if;\n_v_[_n_] := '")
+					b.WriteString("if _d_ > 0 then _v_[_n_] := '<!-- start: " + friendlyFunctionName + " " + traceParameters + " -->'; _n_ := _n_ + 1; end if;\n_v_[_n_] := '")
 				}
 				lineInput = lineInput[2:]
 			}
@@ -568,12 +605,12 @@ func main() {
 								if strings.HasPrefix(tag, "/") {
 									if tagsLength == 0 {
 										fmt.Fprintf(os.Stderr, "\x1b[31;1mCannot close un-opened tag <%v> \x1b[0m \nFile: %v \nLine: %v \nTags: %v \n\n",
-											tag, functionName, lineNumber, tags)
+											tag, friendlyFunctionName, lineNumber, tags)
 										os.Exit(1)
 									}
 									if "/"+tags[tagsLength-1] != tag {
 										fmt.Fprintf(os.Stderr, "\x1b[31;1mClosing tag <%v> mismatches opened tag <%v> \x1b[0m \nFile: %v \nLine: %v \nTags: %v \n\n",
-											tag, tags[tagsLength-1], functionName, lineNumber, tags)
+											tag, tags[tagsLength-1], friendlyFunctionName, lineNumber, tags)
 										os.Exit(1)
 									}
 									tags = tags[:tagsLength-1]
@@ -789,22 +826,16 @@ func main() {
 
 		b.WriteString("\n")
 
-	} /* for scanner.scan */
-
+	}
+	/* for scanner.scan */
 	if len(tags) > 0 {
 		fmt.Fprintf(os.Stderr, "\x1b[31;1mOpened tags not closed \x1b[0m \nFile: %v \nTags: %v \n\n",
-			functionName, tags)
+			friendlyFunctionName, tags)
 		os.Exit(1)
 	}
-
 	if !isRaw && !isView {
 		b.WriteString("';\n_n_ := _n_ + 1;\n")
 	}
-
 	b.WriteString(importFile("templates/template_psp_function_end" + templateSuffix + ".sql"))
-
-	fmt.Println(b.String())
-
-	os.Exit(0)
-
+	return b
 } /* main */

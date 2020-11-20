@@ -1,5 +1,5 @@
 if _d_ > 0 then
-	_v_[_n_] := '<!-- end: $name$ -->'; _n_ := _n_ + 1;
+	_v_[_n_] := '<!-- end: $friendly_name$ -->'; _n_ := _n_ + 1;
 	_v_[_n_] := '<!-- ' || (clock_timestamp() - _c_) :: interval || ' -->'; _n_ := _n_ + 1;
 	if _tm_ != '[]'::jsonb then
 		_tm_ := _tm_ || jsonb_build_object('Line end:', ((clock_timestamp()-_tc_)::interval));
@@ -49,7 +49,7 @@ exception when others then
 				md5(clock_timestamp()::varchar || _l_),
 				current_timestamp,
 				1,
-				'$function$',
+				'$function$' || ' - ' || '$friendly_name$' || ' - ' || '$name$',
 				$form$,
 				_l_,
 				v_error_stack::varchar,
@@ -57,7 +57,7 @@ exception when others then
 				sqlerrm
 			)
 			returning id into _errid_;
-			raise notice 'sql error: % - % - %', '$function$'::text, sqlerrm::text, v_error_stack::text;
+			raise notice 'sql error: % - % - %', '$friendly_name$ ($function$)'::text, sqlerrm::text, v_error_stack::text;
 			exit;
 			exception when others then null;
 		end;

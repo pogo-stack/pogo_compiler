@@ -1,4 +1,4 @@
-no_params_check
+icons
 
 p_icon varchar null
 
