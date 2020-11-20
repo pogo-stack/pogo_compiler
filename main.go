@@ -189,7 +189,7 @@ func main() {
 	relativeFolderHash = fmt.Sprintf("%x_", md5.Sum([]byte(relPath)))
 	relativeFolderName = relPath + "/"
 
-	if (relPath == ".") {
+	if (relPath == "." || rootCodePath == "") {
 		relativeFolderHash = ""
 		relativeFolderName = ""
 	}
@@ -364,7 +364,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 				continue
 			}
 
-			functionName = relativeFolderHash + lineInput
+			functionName = fmt.Sprintf("%x", md5.Sum([]byte(relativeFolderName + lineInput)))
 			friendlyFunctionName = relativeFolderName + lineInput
 
 			if !isView {
@@ -408,15 +408,15 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 					if e == -1 {
 						continue
 					}
-					urlPath, _ :=  filepath.Split(newS[:e])
+					urlPath :=  newS[:e]
 					tokenToReplace := "<%= psp2/" + urlPath
-					urlPath = filepath.Clean(urlPath)
+					urlPath = strings.TrimSpace(filepath.Clean(urlPath))
 					pathMD5 := ""
 					if (urlPath == ".") {
 						urlPath = ""
 					} else {
 						urlPath = strings.Replace(urlPath, "\\", "/", -1)
-						pathMD5 = fmt.Sprintf("%x_", md5.Sum([]byte(urlPath)))
+						pathMD5 = fmt.Sprintf("%x", md5.Sum([]byte(urlPath)))
 					}
 
 					replacementString := fmt.Sprintf("<= (select text_content from psp2_%v", pathMD5)
@@ -842,6 +842,10 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 	if !isRaw && !isView {
 		b.WriteString("';\n_n_ := _n_ + 1;\n")
 	}
-	b.WriteString(importFile("templates/template_psp_function_end" + templateSuffix + ".sql"))
+	if (rootCodePath == "") {
+		b.WriteString(importFile("templates/template_psp_function_end" + templateSuffix + ".sql"))
+	} else {
+		b.WriteString(importFile("templates/template_psp_function_end_routed" + templateSuffix + ".sql"))
+	}
 	return b
 } /* main */
