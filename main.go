@@ -59,14 +59,14 @@ func writePogoBreakPoint(b *bytes.Buffer, debugVariables []string, lineNumber in
 		}
 
 		if breakpointCount > 0 {
-			b.WriteString(fmt.Sprintf("perform __pogo_stack_push('%v', %v, %v, _ds_, _thread_id_, '%v', _frame_depth_);", functionName, lineNumber, true, pogoFileName))
+			b.WriteString(fmt.Sprintf("perform __pogo_stack_push('%v', %v, %v, _ds_, _thread_id_, '%v', _frame_depth_);", friendlyFunctionName, lineNumber, true, pogoFileName))
 		} else {
-			b.WriteString(fmt.Sprintf("_frame_depth_ := __pogo_stack_push('%v', %v, %v, _ds_, _thread_id_, '%v', null::integer);", functionName, lineNumber, false, pogoFileName))
+			b.WriteString(fmt.Sprintf("_frame_depth_ := __pogo_stack_push('%v', %v, %v, _ds_, _thread_id_, '%v', null::integer);", friendlyFunctionName, lineNumber, false, pogoFileName))
 		}
 
-		b.WriteString(fmt.Sprintf("if __pogo_break_point_should_stop(%v, '%v', _thread_id_, _frame_depth_, %v) then \n", lineNumber, functionName, isTraceEnabled))
+		b.WriteString(fmt.Sprintf("if __pogo_break_point_should_stop(%v, '%v', _thread_id_, _frame_depth_, %v) then \n", lineNumber, friendlyFunctionName, isTraceEnabled))
 		{
-			b.WriteString(fmt.Sprintf("_ds_bs_ := __pogo_break_point(%v, '%v', _thread_id_, _frame_depth_);\n", lineNumber, functionName))
+			b.WriteString(fmt.Sprintf("_ds_bs_ := __pogo_break_point(%v, '%v', _thread_id_, _frame_depth_);\n", lineNumber, friendlyFunctionName))
 			b.WriteString(fmt.Sprintf(`case _ds_bs_->>'command'
                                             when 'retry' then continue;
                                             when 'continue' then exit;
@@ -183,13 +183,13 @@ func main() {
 	pogoFileName, _ = filepath.Abs(os.Args[len(os.Args)-1])
 
 	p2, _ := filepath.Split(pogoFileName)
-	relPath, _ :=  filepath.Rel(filepath.Clean(strings.ToLower(rootCodePath)), filepath.Clean(strings.ToLower(p2)))
+	relPath, _ := filepath.Rel(filepath.Clean(strings.ToLower(rootCodePath)), filepath.Clean(strings.ToLower(p2)))
 	relPath = strings.Replace(relPath, "\\", "/", -1)
 	fmt.Print(relPath)
 	relativeFolderHash = fmt.Sprintf("%x_", md5.Sum([]byte(relPath)))
 	relativeFolderName = relPath + "/"
 
-	if (relPath == "." || rootCodePath == "") {
+	if relPath == "." || rootCodePath == "" {
 		relativeFolderHash = ""
 		relativeFolderName = ""
 	}
@@ -364,7 +364,11 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 				continue
 			}
 
-			functionName = fmt.Sprintf("%x", md5.Sum([]byte(relativeFolderName + lineInput)))
+			if relativeFolderName == "" || strings.HasPrefix(relativeFolderName, "pogo_system/") {
+				functionName = lineInput
+			} else {
+				functionName = fmt.Sprintf("%x", md5.Sum([]byte(relativeFolderName+lineInput)))
+			}
 			friendlyFunctionName = relativeFolderName + lineInput
 
 			if !isView {
@@ -393,12 +397,12 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 				}
 			}
 
-			if (rootCodePath == "") {
+			if rootCodePath == "" {
 				lineInput = strings.Replace(lineInput, "<%= psp2_", "<= (select text_content from psp2_", -1)
 			} else {
 				preReplace := lineInput
 				lineInput = strings.Replace(lineInput, "<%= psp2/", "<= (select text_content from psp2_", -1)
-				if (preReplace != lineInput) { //need to call a psp2 including path
+				if preReplace != lineInput { //need to call a psp2 including path
 					s := strings.Index(preReplace, "psp2/")
 					if s == -1 {
 						continue
@@ -408,11 +412,11 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 					if e == -1 {
 						continue
 					}
-					urlPath :=  newS[:e]
+					urlPath := newS[:e]
 					tokenToReplace := "<%= psp2/" + urlPath
 					urlPath = strings.TrimSpace(filepath.Clean(urlPath))
 					pathMD5 := ""
-					if (urlPath == ".") {
+					if urlPath == "." {
 						urlPath = ""
 					} else {
 						urlPath = strings.Replace(urlPath, "\\", "/", -1)
@@ -842,7 +846,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 	if !isRaw && !isView {
 		b.WriteString("';\n_n_ := _n_ + 1;\n")
 	}
-	if (rootCodePath == "") {
+	if rootCodePath == "" {
 		b.WriteString(importFile("templates/template_psp_function_end" + templateSuffix + ".sql"))
 	} else {
 		b.WriteString(importFile("templates/template_psp_function_end_routed" + templateSuffix + ".sql"))
