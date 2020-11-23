@@ -185,7 +185,6 @@ func main() {
 	p2, _ := filepath.Split(pogoFileName)
 	relPath, _ := filepath.Rel(filepath.Clean(strings.ToLower(rootCodePath)), filepath.Clean(strings.ToLower(p2)))
 	relPath = strings.Replace(relPath, "\\", "/", -1)
-	fmt.Print(relPath)
 	relativeFolderHash = fmt.Sprintf("%x_", md5.Sum([]byte(relPath)))
 	relativeFolderName = relPath + "/"
 
