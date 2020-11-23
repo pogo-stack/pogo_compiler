@@ -375,7 +375,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 			if !isView {
 				b.WriteString(importFile("templates/template_psp_function_drop.sql"))
 				if isDebuggable {
-					b.WriteString(fmt.Sprintf("delete from __pogo__breakpoints where page = '%v';\n", functionName))
+					b.WriteString(fmt.Sprintf("delete from __pogo__breakpoints where page = '%v';\n", friendlyFunctionNameOnly))
 				}
 			}
 
