@@ -7,6 +7,8 @@
 // templates/template_psp_function_end.sql
 // templates/template_psp_function_end_raw.sql
 // templates/template_psp_function_end_routed.sql
+// templates/template_psp_function_end_routed_raw.sql
+// templates/template_psp_function_end_routed_view.sql
 // templates/template_psp_function_end_view.sql
 // DO NOT EDIT!
 
@@ -215,6 +217,46 @@ func templatesTemplate_psp_function_end_routedSql() (*asset, error) {
 	return a, nil
 }
 
+var _templatesTemplate_psp_function_end_routed_rawSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\xc1\x09\xc0\x20\x0c\x05\xd0\xfb\x9f\xc2\x43\xb6\x70\x95\x82\xc4\x1a\x82\x34\xa8\xd5\x58\x70\xfb\x3e\x48\x2b\x11\x44\x30\x6e\xba\x59\x25\x0c\x1b\xba\x5e\x0b\xf4\x75\x63\xaf\x56\xfd\xa4\x9b\x5d\xb4\xcf\x43\x11\xa0\x22\x79\xab\xca\x4c\x79\x0a\x3f\xa3\xd7\xe6\x8b\x80\xcb\xff\x00\x00\x00\xff\xff\x21\x7e\x2a\x60\x4c\x00\x00\x00")
+
+func templatesTemplate_psp_function_end_routed_rawSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_templatesTemplate_psp_function_end_routed_rawSql,
+		"templates/template_psp_function_end_routed_raw.sql",
+	)
+}
+
+func templatesTemplate_psp_function_end_routed_rawSql() (*asset, error) {
+	bytes, err := templatesTemplate_psp_function_end_routed_rawSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "templates/template_psp_function_end_routed_raw.sql", size: 76, mode: os.FileMode(438), modTime: time.Unix(1583153605, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _templatesTemplate_psp_function_end_routed_viewSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xe2\xe2\x02\x04\x00\x00\xff\xff\x6b\x13\xe3\x5b\x02\x00\x00\x00")
+
+func templatesTemplate_psp_function_end_routed_viewSqlBytes() ([]byte, error) {
+	return bindataRead(
+		_templatesTemplate_psp_function_end_routed_viewSql,
+		"templates/template_psp_function_end_routed_view.sql",
+	)
+}
+
+func templatesTemplate_psp_function_end_routed_viewSql() (*asset, error) {
+	bytes, err := templatesTemplate_psp_function_end_routed_viewSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "templates/template_psp_function_end_routed_view.sql", size: 2, mode: os.FileMode(438), modTime: time.Unix(1559982035, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _templatesTemplate_psp_function_end_viewSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xe2\xe2\x02\x04\x00\x00\xff\xff\x6b\x13\xe3\x5b\x02\x00\x00\x00")
 
 func templatesTemplate_psp_function_end_viewSqlBytes() ([]byte, error) {
@@ -294,6 +336,8 @@ var _bindata = map[string]func() (*asset, error){
 	"templates/template_psp_function_end.sql": templatesTemplate_psp_function_endSql,
 	"templates/template_psp_function_end_raw.sql": templatesTemplate_psp_function_end_rawSql,
 	"templates/template_psp_function_end_routed.sql": templatesTemplate_psp_function_end_routedSql,
+	"templates/template_psp_function_end_routed_raw.sql": templatesTemplate_psp_function_end_routed_rawSql,
+	"templates/template_psp_function_end_routed_view.sql": templatesTemplate_psp_function_end_routed_viewSql,
 	"templates/template_psp_function_end_view.sql": templatesTemplate_psp_function_end_viewSql,
 }
 
@@ -345,6 +389,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"template_psp_function_end.sql": &bintree{templatesTemplate_psp_function_endSql, map[string]*bintree{}},
 		"template_psp_function_end_raw.sql": &bintree{templatesTemplate_psp_function_end_rawSql, map[string]*bintree{}},
 		"template_psp_function_end_routed.sql": &bintree{templatesTemplate_psp_function_end_routedSql, map[string]*bintree{}},
+		"template_psp_function_end_routed_raw.sql": &bintree{templatesTemplate_psp_function_end_routed_rawSql, map[string]*bintree{}},
+		"template_psp_function_end_routed_view.sql": &bintree{templatesTemplate_psp_function_end_routed_viewSql, map[string]*bintree{}},
 		"template_psp_function_end_view.sql": &bintree{templatesTemplate_psp_function_end_viewSql, map[string]*bintree{}},
 	}},
 }}
