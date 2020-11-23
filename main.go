@@ -188,6 +188,11 @@ func main() {
 	relativeFolderHash = fmt.Sprintf("%x_", md5.Sum([]byte(relPath)))
 	relativeFolderName = relPath + "/"
 
+	if relPath == "." || relPath == "" || rootCodePath == "" {
+		relativeFolderHash = ""
+		relativeFolderName = ""
+	}
+
 	b := compileFile(pogoFileName, isCleanup)
 
 	fmt.Println(b.String())
