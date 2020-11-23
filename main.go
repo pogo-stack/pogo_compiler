@@ -29,9 +29,9 @@ import (
 	"strings"
 )
 
-var compilerVersion = "pogo1.7"
+var compilerVersion = "pogo1.7.1"
 var BUILD_VERSION = ""
-var functionName, friendlyFunctionName, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
+var functionName, friendlyFunctionName, friendlyFunctionNameOnly, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
 var testcases, dependencies, nativeParameters []string
 var isNoauth bool
 var isPCheck bool = true
@@ -59,14 +59,14 @@ func writePogoBreakPoint(b *bytes.Buffer, debugVariables []string, lineNumber in
 		}
 
 		if breakpointCount > 0 {
-			b.WriteString(fmt.Sprintf("perform __pogo_stack_push('%v', %v, %v, _ds_, _thread_id_, '%v', _frame_depth_);", friendlyFunctionName, lineNumber, true, pogoFileName))
+			b.WriteString(fmt.Sprintf("perform __pogo_stack_push('%v', %v, %v, _ds_, _thread_id_, '%v', _frame_depth_);", friendlyFunctionNameOnly, lineNumber, true, pogoFileName))
 		} else {
-			b.WriteString(fmt.Sprintf("_frame_depth_ := __pogo_stack_push('%v', %v, %v, _ds_, _thread_id_, '%v', null::integer);", friendlyFunctionName, lineNumber, false, pogoFileName))
+			b.WriteString(fmt.Sprintf("_frame_depth_ := __pogo_stack_push('%v', %v, %v, _ds_, _thread_id_, '%v', null::integer);", friendlyFunctionNameOnly, lineNumber, false, pogoFileName))
 		}
 
-		b.WriteString(fmt.Sprintf("if __pogo_break_point_should_stop(%v, '%v', _thread_id_, _frame_depth_, %v) then \n", lineNumber, friendlyFunctionName, isTraceEnabled))
+		b.WriteString(fmt.Sprintf("if __pogo_break_point_should_stop(%v, '%v', _thread_id_, _frame_depth_, %v) then \n", lineNumber, friendlyFunctionNameOnly, isTraceEnabled))
 		{
-			b.WriteString(fmt.Sprintf("_ds_bs_ := __pogo_break_point(%v, '%v', _thread_id_, _frame_depth_);\n", lineNumber, friendlyFunctionName))
+			b.WriteString(fmt.Sprintf("_ds_bs_ := __pogo_break_point(%v, '%v', _thread_id_, _frame_depth_);\n", lineNumber, friendlyFunctionNameOnly))
 			b.WriteString(fmt.Sprintf(`case _ds_bs_->>'command'
                                             when 'retry' then continue;
                                             when 'continue' then exit;
@@ -136,7 +136,7 @@ func importFile(fileName string) string {
 			var values []string
 
 			for _, breakpoint := range debuggerBreakpoints {
-				values = append(values, fmt.Sprintf("('%v', %v)", functionName, breakpoint))
+				values = append(values, fmt.Sprintf("('%v', %v)", friendlyFunctionNameOnly, breakpoint))
 			}
 
 			line = strings.Replace(line, "$debugger_breakpoints$", fmt.Sprintf("insert into __pogo__breakpoints (page, line) values %v;", strings.Join(values, ",")), -1)
@@ -370,11 +370,12 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 				functionName = fmt.Sprintf("%x", md5.Sum([]byte(relativeFolderName+lineInput)))
 			}
 			friendlyFunctionName = relativeFolderName + lineInput
+			friendlyFunctionNameOnly = lineInput
 
 			if !isView {
 				b.WriteString(importFile("templates/template_psp_function_drop.sql"))
 				if isDebuggable {
-					b.WriteString(fmt.Sprintf("delete from __pogo__breakpoints where page = '%v';\n", functionName))
+					b.WriteString(fmt.Sprintf("delete from __pogo__breakpoints where page = '%v';\n", friendlyFunctionNameOnly))
 				}
 			}
 
