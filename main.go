@@ -188,7 +188,7 @@ func main() {
 	relativeFolderHash = fmt.Sprintf("%x_", md5.Sum([]byte(relPath)))
 	relativeFolderName = relPath + "/"
 
-	if relPath == "." || rootCodePath == "" {
+	if relPath == "." || relPath == "" || rootCodePath == "" {
 		relativeFolderHash = ""
 		relativeFolderName = ""
 	}
