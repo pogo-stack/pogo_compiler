@@ -118,9 +118,9 @@ func importFile(fileName string, initializeFunctionParameters bool) string {
 
 				if psp2PogoContext && !strings.HasSuffix(functionParameters, "__pogo_context jsonb jsonb_build_object()") {
 					if parametersLen > 0 {
-						functionParameters = functionParameters + ",__pogo_context jsonb jsonb_build_object()"
+						functionParameters = functionParameters + ",__pogo_context jsonb default jsonb_build_object()"
 					} else {
-						functionParameters = functionParameters + "__pogo_context jsonb jsonb_build_object()"
+						functionParameters = functionParameters + "__pogo_context jsonb default jsonb_build_object()"
 					}
 				}
 		}
