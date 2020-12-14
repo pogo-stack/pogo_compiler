@@ -116,11 +116,13 @@ func importFile(fileName string, initializeFunctionParameters bool) string {
 				functionParameters = functionParameters[:parametersLen-1]
 			}
 
-				if psp2PogoContext && !strings.HasSuffix(functionParameters, "__pogo_context jsonb jsonb_build_object()") {
+			contextParameter := "__pogo_context jsonb default jsonb_build_object()"
+
+			if psp2PogoContext && !strings.HasSuffix(functionParameters, contextParameter) {
 					if parametersLen > 0 {
-						functionParameters = functionParameters + ",__pogo_context jsonb default jsonb_build_object()"
+						functionParameters = fmt.Sprintf("%v,%v", functionParameters, contextParameter)
 					} else {
-						functionParameters = functionParameters + "__pogo_context jsonb default jsonb_build_object()"
+						functionParameters = fmt.Sprintf("%v%v", functionParameters, contextParameter)
 					}
 				}
 		}
