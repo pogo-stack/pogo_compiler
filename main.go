@@ -42,6 +42,7 @@ var breakpointCount = 0
 var debuggerBreakpoints []int
 var pogoFileName = ""
 var rootCodePath = ""
+var psp2PogoContext = false
 var relativeFolderHash = ""
 var relativeFolderName = ""
 
@@ -84,7 +85,7 @@ func writePogoBreakPoint(b *bytes.Buffer, debugVariables []string, lineNumber in
 
 }
 
-func importFile(fileName string) string {
+func importFile(fileName string, initializeFunctionParameters bool) string {
 
 	embeddedFile, err := Asset(fileName)
 	if err != nil {
@@ -109,10 +110,21 @@ func importFile(fileName string) string {
 
 		line = strings.Replace(line, `$is_noauth$`, isNoauthSQLBool, -1)
 
-		parametersLen := len(functionParameters)
-		if parametersLen > 0 && functionParameters[parametersLen-1] == ',' {
-			functionParameters = functionParameters[:parametersLen-1]
+		if initializeFunctionParameters {
+			parametersLen := len(functionParameters)
+			if parametersLen > 0 && functionParameters[parametersLen-1] == ',' {
+				functionParameters = functionParameters[:parametersLen-1]
+			}
+
+				if psp2PogoContext && !strings.HasSuffix(functionParameters, "__pogo_context jsonb jsonb_build_object()") {
+					if parametersLen > 0 {
+						functionParameters = functionParameters + ",__pogo_context jsonb jsonb_build_object()"
+					} else {
+						functionParameters = functionParameters + "__pogo_context jsonb jsonb_build_object()"
+					}
+				}
 		}
+
 		line = strings.Replace(line, `$parameters$`, functionParameters, -1)
 		line = strings.Replace(line, `$returns$`, functionReturns, -1)
 		line = strings.Replace(line, `$form$`, functionForm, -1)
@@ -161,6 +173,7 @@ func main() {
 	isTraceFlag := flag.Bool("trace", false, "Enables tracing into __pogo_debugger_trace (works with debugging enabled only)")
 	pTraceFlag := flag.Bool("ptrace", false, "Enables output of function parameters in DOM rendering)")
 	srcRootPathFlag := flag.String("root", "", "Root directory code file is compiled against")
+	flag.BoolVar(&psp2PogoContext, "cx", false, "Enable pogo context for psp2 functions")
 	flag.Parse()
 
 	isDebuggable = *isDebuggableFlag
@@ -372,7 +385,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 			friendlyFunctionNameOnly = lineInput
 
 			if !isView {
-				b.WriteString(importFile("templates/template_psp_function_drop.sql"))
+				b.WriteString(importFile("templates/template_psp_function_drop.sql", false))
 				if isDebuggable {
 					b.WriteString(fmt.Sprintf("delete from __pogo__breakpoints where page = '%v';\n", friendlyFunctionNameOnly))
 				}
@@ -383,7 +396,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 			}
 
 			if !((isNative || isRaw || isView) && !isJSONB) {
-				b.WriteString(importFile("templates/template_psp_function_begin" + templateSuffix + ".sql"))
+				b.WriteString(importFile("templates/template_psp_function_begin" + templateSuffix + ".sql", true))
 			}
 
 			isFirstLine = false
@@ -442,7 +455,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 				lineInput = lineInput[2:]
 
 				if (isNative || isRaw || isView) && !isJSONB {
-					b.WriteString(importFile("templates/template_psp_function_begin" + templateSuffix + ".sql"))
+					b.WriteString(importFile("templates/template_psp_function_begin" + templateSuffix + ".sql", true))
 				}
 			}
 
@@ -847,9 +860,9 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 		b.WriteString("';\n_n_ := _n_ + 1;\n")
 	}
 	if rootCodePath == "" {
-		b.WriteString(importFile("templates/template_psp_function_end" + templateSuffix + ".sql"))
+		b.WriteString(importFile("templates/template_psp_function_end" + templateSuffix + ".sql", true))
 	} else {
-		b.WriteString(importFile("templates/template_psp_function_end_routed" + templateSuffix + ".sql"))
+		b.WriteString(importFile("templates/template_psp_function_end_routed" + templateSuffix + ".sql", true))
 	}
 	return b
 } /* main */

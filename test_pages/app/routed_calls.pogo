@@ -1,5 +1,8 @@
 routed_calls
 
+p_parametyer varchar '123'
+p_parametyer2 varchar '123'
+
 <?
 ?>
 <%
