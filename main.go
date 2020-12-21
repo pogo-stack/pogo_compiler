@@ -23,13 +23,14 @@ import (
 	"crypto/md5"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-var compilerVersion = "pogo1.7.1"
+var compilerVersion = "pogo1.7.2"
 var BUILD_VERSION = ""
 var functionName, friendlyFunctionName, friendlyFunctionNameOnly, functionPrefix, functionParameters, functionReturns, functionForm, templateSuffix, sqlDebug, volatilityCategory string
 var testcases, dependencies, nativeParameters []string
@@ -42,7 +43,7 @@ var breakpointCount = 0
 var debuggerBreakpoints []int
 var pogoFileName = ""
 var rootCodePath = ""
-var psp2PogoContext = false
+var isPsp2PogoContext = false
 var relativeFolderHash = ""
 var relativeFolderName = ""
 
@@ -100,7 +101,7 @@ func importFile(fileName string, initializeFunctionParameters bool) string {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line = strings.Replace(scanner.Text(), `$name$`, functionName, -1)
-		line = strings.Replace(line, `$friendly_name$`, friendlyFunctionName, -1)
+		line = strings.Replace(line, `$friendly_name$`, functionPrefix, -1)
 		line = strings.Replace(line, `$function$`, functionPrefix+functionName, -1)
 
 		isNoauthSQLBool := "false"
@@ -118,13 +119,13 @@ func importFile(fileName string, initializeFunctionParameters bool) string {
 
 			contextParameter := "__pogo_context jsonb default jsonb_build_object()"
 
-			if psp2PogoContext && !strings.HasSuffix(functionParameters, contextParameter) {
-					if parametersLen > 0 {
-						functionParameters = fmt.Sprintf("%v,%v", functionParameters, contextParameter)
-					} else {
-						functionParameters = fmt.Sprintf("%v%v", functionParameters, contextParameter)
-					}
+			if isPsp2PogoContext && !strings.HasSuffix(functionParameters, contextParameter) {
+				if parametersLen > 0 {
+					functionParameters = fmt.Sprintf("%v,%v", functionParameters, contextParameter)
+				} else {
+					functionParameters = fmt.Sprintf("%v%v", functionParameters, contextParameter)
 				}
+			}
 		}
 
 		line = strings.Replace(line, `$parameters$`, functionParameters, -1)
@@ -175,7 +176,7 @@ func main() {
 	isTraceFlag := flag.Bool("trace", false, "Enables tracing into __pogo_debugger_trace (works with debugging enabled only)")
 	pTraceFlag := flag.Bool("ptrace", false, "Enables output of function parameters in DOM rendering)")
 	srcRootPathFlag := flag.String("root", "", "Root directory code file is compiled against")
-	flag.BoolVar(&psp2PogoContext, "cx", false, "Enable pogo context for psp2 functions")
+	flag.BoolVar(&isPsp2PogoContext, "cx", false, "Enable pogo context for psp2 functions")
 	flag.Parse()
 
 	isDebuggable = *isDebuggableFlag
@@ -241,7 +242,6 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 	toSkip := false
 	tagProcessed := false
 	isFirstLine := true
-	isIncluding := false
 	isNative := false
 	isRaw := false
 	isJSONB := false
@@ -280,11 +280,14 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 	rePSPFull := regexp.MustCompile(" psp_[a-z_]{1,}")
 	rePSPName := regexp.MustCompile("^ psp_")
 	reTag := regexp.MustCompile("^[/]{0,1}[a-z]{1,}[0-9]{0,1}")
+	lastBraqcketPsp2 := regexp.MustCompile("(?is)(psp2(/|_)).*?\\).*?(%>)")
 	debugVariables := []string{}
-	//is_debuggable := true
+
 	scanner := bufio.NewScanner(sourceFile)
+	scanner = addContextIfNeeded(pogoFileName, lastBraqcketPsp2, scanner)
+
 	lineNumber := 0
-	for (!isIncluding && scanner.Scan()) || isIncluding {
+	for scanner.Scan() {
 
 		lineNumber++
 		lineInput = scanner.Text()
@@ -398,7 +401,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 			}
 
 			if !((isNative || isRaw || isView) && !isJSONB) {
-				b.WriteString(importFile("templates/template_psp_function_begin" + templateSuffix + ".sql", true))
+				b.WriteString(importFile("templates/template_psp_function_begin"+templateSuffix+".sql", true))
 			}
 
 			isFirstLine = false
@@ -412,13 +415,13 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 				}
 			}
 
-			if rootCodePath == "" {
-				lineInput = strings.Replace(lineInput, "<%= psp2_", "<= (select text_content from psp2_", -1)
-			} else {
+			lineInput = strings.Replace(lineInput, "<%= psp2_", "<= (select text_content from psp2_", -1)
+			if rootCodePath != "" {
 				preReplace := lineInput
 				lineInput = strings.Replace(lineInput, "<%= psp2/", "<= (select text_content from psp2_", -1)
 				if preReplace != lineInput { //need to call a psp2 including path
 					s := strings.Index(preReplace, "psp2/")
+
 					if s == -1 {
 						continue
 					}
@@ -457,7 +460,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 				lineInput = lineInput[2:]
 
 				if (isNative || isRaw || isView) && !isJSONB {
-					b.WriteString(importFile("templates/template_psp_function_begin" + templateSuffix + ".sql", true))
+					b.WriteString(importFile("templates/template_psp_function_begin"+templateSuffix+".sql", true))
 				}
 			}
 
@@ -466,6 +469,9 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 
 				if !isView {
 					b.WriteString("begin\n")
+					if isPsp2PogoContext {
+						b.WriteString("__pogo_context := jsonb_set(__pogo_context, '{cs}', to_jsonb(coalesce(__pogo_context->>'cs', '') || '" + friendlyFunctionName + ":' ), true); \n")
+					}
 				}
 
 				if !isRaw && !isView {
@@ -862,9 +868,73 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 		b.WriteString("';\n_n_ := _n_ + 1;\n")
 	}
 	if rootCodePath == "" {
-		b.WriteString(importFile("templates/template_psp_function_end" + templateSuffix + ".sql", true))
+		b.WriteString(importFile("templates/template_psp_function_end"+templateSuffix+".sql", true))
 	} else {
-		b.WriteString(importFile("templates/template_psp_function_end_routed" + templateSuffix + ".sql", true))
+		b.WriteString(importFile("templates/template_psp_function_end_routed"+templateSuffix+".sql", true))
 	}
 	return b
+}
+
+var spacesAndReturnsReplacer = strings.NewReplacer(
+	"\r\n", "",
+	"\r", "",
+	"\n", "",
+	"\v", "",
+	"\f", "",
+	"\t", "",
+	"\u0085", "",
+	"\u2028", "",
+	"\u2029", "",
+)
+
+func addContextIfNeeded(name string, psp2Tag *regexp.Regexp, scanner *bufio.Scanner) *bufio.Scanner {
+	if isPsp2PogoContext {
+		reverse := func(lst [][]int) chan []int {
+			ret := make(chan []int)
+			go func() {
+				for i, _ := range lst {
+					ret <- lst[len(lst)-1-i]
+				}
+				close(ret)
+			}()
+			return ret
+		}
+		file, _ := ioutil.ReadFile(pogoFileName)
+		matchIndexes := psp2Tag.FindAllSubmatchIndex(file, -1)
+		for key := range reverse(matchIndexes) {
+
+			matchEnd := key[len(key)-1]
+			replacement := []byte{}
+			{
+				matchStart := key[0]
+				match := string(file[matchStart:matchEnd])
+				open := strings.Index(match, "(")
+				close := strings.LastIndex(match, ")")
+				matchEnd = matchEnd - (matchEnd - matchStart - close)
+
+				if open+close > -2 {
+					//detect if no existing parameters
+					insideBrackets := string(match[open+1 : close])
+					cleanInsides := spacesAndReturnsReplacer.Replace(insideBrackets)
+					if cleanInsides == "" {
+						replacement = []byte("__pogo_context")
+					} else {
+						replacement = []byte(",__pogo_context")
+					}
+				}
+			}
+
+			if len(replacement) == 0 {
+				continue
+			}
+
+			rest := make([]byte, len(file[matchEnd:]))
+			copy(rest, file[matchEnd:])
+			file = append(append(file[:matchEnd], replacement...), rest...)
+		}
+		//fmt.Print("%v", string(file))
+		reader := bytes.NewReader(file)
+		scanner = bufio.NewScanner(reader)
+	}
+	return scanner
 } /* main */
