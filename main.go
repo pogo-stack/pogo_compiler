@@ -944,9 +944,9 @@ func addContextIfNeeded(name string, psp2Tag *regexp.Regexp, scanner *bufio.Scan
 					insideBrackets := string(match[open+1 : close])
 					cleanInsides := spacesAndReturnsReplacer.Replace(insideBrackets)
 					if cleanInsides == "" {
-						replacement = []byte("__pogo_context")
+						replacement = []byte("__pogo_context := __pogo_context")
 					} else {
-						replacement = []byte(",__pogo_context")
+						replacement = []byte(",__pogo_context := __pogo_context")
 					}
 				}
 			}
