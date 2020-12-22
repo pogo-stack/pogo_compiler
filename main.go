@@ -317,6 +317,11 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 
 		if isFirstLine {
 
+			if lineInput == "#pragma nocontext" {
+				isPsp2PogoContext = false
+				continue
+			}
+
 			if lineInput == "#pragma noauth" {
 				isNoauth = true
 				continue
@@ -891,10 +896,10 @@ func addContextIfNeeded(name string, psp2Tag *regexp.Regexp, scanner *bufio.Scan
 	{
 		isFinishedChecking := true
 		reader := bytes.NewReader(file)
-		scanner = bufio.NewScanner(reader)
-		for scanner.Scan() {
+		scanner2 := bufio.NewScanner(reader)
+		for scanner2.Scan() {
 
-			lineInput := scanner.Text()
+			lineInput := scanner2.Text()
 			if lineInput == "" {
 				continue
 			}
@@ -908,6 +913,11 @@ func addContextIfNeeded(name string, psp2Tag *regexp.Regexp, scanner *bufio.Scan
 					isPsp2PogoContext = false
 					continue
 				}
+
+				if strings.HasPrefix(lineInput, "#") {
+					continue
+				}
+
 				break
 			}
 		}
