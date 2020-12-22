@@ -345,7 +345,6 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 				isRaw = true
 				functionPrefix = "f_"
 				functionParameters = ""
-				//native_parameters = []
 				templateSuffix = "_raw"
 				continue
 			}
@@ -888,6 +887,32 @@ var spacesAndReturnsReplacer = strings.NewReplacer(
 )
 
 func addContextIfNeeded(name string, psp2Tag *regexp.Regexp, scanner *bufio.Scanner) *bufio.Scanner {
+	file, _ := ioutil.ReadFile(name)
+	{
+		isFinishedChecking := true
+		reader := bytes.NewReader(file)
+		scanner = bufio.NewScanner(reader)
+		for scanner.Scan() {
+
+			lineInput := scanner.Text()
+			if lineInput == "" {
+				continue
+			}
+
+			if strings.HasPrefix(lineInput, "//") {
+				continue
+			}
+
+			if isFinishedChecking {
+				if lineInput == "#pragma nocontext" {
+					isPsp2PogoContext = false
+					continue
+				}
+				break
+			}
+		}
+	}
+
 	if isPsp2PogoContext {
 		reverse := func(lst [][]int) chan []int {
 			ret := make(chan []int)
@@ -899,7 +924,9 @@ func addContextIfNeeded(name string, psp2Tag *regexp.Regexp, scanner *bufio.Scan
 			}()
 			return ret
 		}
-		file, _ := ioutil.ReadFile(pogoFileName)
+
+
+
 		matchIndexes := psp2Tag.FindAllSubmatchIndex(file, -1)
 		for key := range reverse(matchIndexes) {
 
