@@ -454,7 +454,6 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 			lineInput = strings.Replace(lineInput, "pogo_http_code(", "_addr_ := _addr_ || jsonb_build_object('http_code', ", -1)
 			lineInput = strings.Replace(lineInput, "pogo_header(", "_addr_ := jsonb_set(_addr_, '{headers}',", -1)
 			lineInput = strings.Replace(lineInput, "pogo_cookie(", "_addr_ := jsonb_set(_addr_, '{cookies}',", -1)
-
 			/* variables declaration tags <? ?> */
 			if strings.HasPrefix(lineInput, "<?") {
 				inHeader = false /* as soon as we reach the declare section, the header section stops */
@@ -475,6 +474,7 @@ func compileFile(pogoFileName string, isCleanup *bool) bytes.Buffer {
 					b.WriteString("begin\n")
 					if isPsp2PogoContext {
 						b.WriteString("__pogo_context := jsonb_set(__pogo_context, '{cs}', to_jsonb(coalesce(__pogo_context->>'cs', '') || '" + friendlyFunctionName + ":' ), true); \n")
+						b.WriteString("__pogo_context := jsonb_set(__pogo_context, '{f}', to_jsonb('" + friendlyFunctionName + "'::text), true); \n")
 					}
 				}
 
